@@ -1,0 +1,446 @@
+#include "p16F628a.inc"	    ;incluir librerias relacionadas con el dispositivo
+__CONFIG _FOSC_INTOSCCLK & _WDTE_OFF & _PWRTE_OFF & _MCLRE_OFF & _BOREN_OFF & _LVP_OFF & _CPD_OFF & _CP_OFF
+; TODO INSERT CONFIG CODE HERE USING CONFIG BITS GENERATOR
+
+RES_VECT CODE 0x0000	; processor reset vector
+GOTO START  ; go to beginning of program
+ 
+INT_VECT CODE 0x004 ; interrupt vector
+	;ISR code
+ 
+	DECFSZ CNT
+	GOTO $+7
+	CALL melody
+	INCF note
+	MOVLW D'4' ; 50mS * value
+	MOVWF CNT
+	    ; 256uS * 195 =~ 50mS
+	    ; 255 - 195 = 60
+	MOVLW D'190' ; preload value
+	MOVWF TMR0
+	bcf INTCON, T0IF ; clr TMR0 interrupt flag
+	retfie ; return from interrupt
+	    
+MAIN_PROG CODE ; let linker place main program
+ 
+CNT equ 0x20
+note equ 0x21
+i equ 0x30
+j equ 0x31
+k equ 0x32
+ii equ 0x33
+jj equ 0x34
+kk equ 0x35
+ 
+ 
+START
+ 
+			    ; setup registers
+			    ; setp TMR0 operation
+			    ; internal clock, pos edge, prescale 256
+			    
+    MOVLW 0x07 ;Apagar comparadores
+    MOVWF CMCON
+    BSF STATUS, RP0
+    MOVLW 0x00
+    MOVWF TRISA
+    MOVWF TRISB
+    MOVLW b'10000111'
+    MOVWF OPTION_REG
+    BCF STATUS, RP0 ; BANK 0
+    
+			; setup TMR0 INT
+    bsf INTCON, GIE	; enable global interrupt
+    bsf INTCON, T0IE	; enable TMR0 interrupt
+    bcf INTCON, T0IF	; clr TMR0 interrupt flag to turn on,
+			; must be cleared after interrupt
+			; 256uS * 195 =~ 50mS
+			; 255 - 195 = 60
+    MOVLW D'60'		; preload value
+    MOVWF TMR0
+    MOVLW D'10'		; 50mS * 20 = 1 Sec.
+    MOVWF CNT
+    CLRF PORTA
+    CLRF PORTB
+    CLRF note
+    
+    
+    inicio: 
+	
+	bcf PORTB,7
+	call tiempo
+	nop
+	nop
+	nop
+	nop
+	bsf PORTB,7
+	call tiempo
+	nop
+	nop
+	goto inicio
+	
+	
+	
+    ;rutina de tiempo
+    tiempo:
+	    movfw i
+	    movwf ii
+    iloop:  movfw j 
+	    movwf jj
+    jloop:  decfsz jj,f
+	    goto jloop
+	    decfsz ii,f
+	    goto iloop
+	    movfw k 
+	    movwf kk
+	    decfsz kk
+	    goto $-1
+	    return
+	    
+	    
+    melody:
+    
+	MOVFW note
+	XORLW d'27'
+	BTFSS STATUS,Z
+	GOTO $+2
+	CLRF note
+	
+	;mi
+	MOVFW note
+	XORLW d'0'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'20'
+	MOVWF j
+	MOVLW d'14'
+	MOVWF k
+	RETURN
+	;fa#
+	MOVFW note
+	XORLW d'1'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'18'
+	MOVWF j
+	MOVLW d'9'
+	MOVWF k
+	RETURN
+	;sol
+	MOVFW note
+	XORLW d'2'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'16'
+	MOVWF j
+	MOVLW d'18'
+	MOVWF k
+	RETURN
+	;fa#
+	MOVFW note
+	XORLW d'3'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'18'
+	MOVWF j
+	MOVLW d'9'
+	MOVWF k
+	RETURN
+	;la
+	MOVFW note
+	XORLW d'4'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'15'
+	MOVWF j
+	MOVLW d'5'
+	MOVWF k
+	RETURN
+	;sol
+	MOVFW note
+	XORLW d'5'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'16'
+	MOVWF j
+	MOVLW d'18'
+	MOVWF k
+	RETURN
+	;fa#
+	MOVFW note
+	XORLW d'6'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'18'
+	MOVWF j
+	MOVLW d'9'
+	MOVWF k
+	RETURN
+	;mi
+	MOVFW note
+	XORLW d'7'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'20'
+	MOVWF j
+	MOVLW d'14'
+	MOVWF k
+	RETURN
+	;si
+	MOVFW note
+	XORLW d'8'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'13'
+	MOVWF j
+	MOVLW d'7'
+	MOVWF k
+	RETURN
+	;do#'
+	MOVFW note
+	XORLW d'9'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'11'
+	MOVWF j
+	MOVLW d'11'
+	MOVWF k
+	RETURN
+	;re'
+	MOVFW note
+	XORLW d'10'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'10'
+	MOVWF j
+	MOVLW d'14'
+	MOVWF k
+	RETURN
+	;do#'
+	MOVFW note
+	XORLW d'11'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'11'
+	MOVWF j
+	MOVLW d'11'
+	MOVWF k
+	RETURN
+	;la
+	MOVFW note
+	XORLW d'12'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'15'
+	MOVWF j
+	MOVLW d'5'
+	MOVWF k
+	RETURN
+	;do#'
+	MOVFW note
+	XORLW d'13'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'11'
+	MOVWF j
+	MOVLW d'11'
+	MOVWF k
+	RETURN
+	;si
+	MOVFW note
+	XORLW d'14'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'13'
+	MOVWF j
+	MOVLW d'7'
+	MOVWF k
+	RETURN
+	;do
+	MOVFW note
+	XORLW d'15'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'26'
+	MOVWF j
+	MOVLW d'14'
+	MOVWF k
+	RETURN
+	;re
+	MOVFW note
+	XORLW d'16'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'23'
+	MOVWF j
+	MOVLW d'12'
+	MOVWF k
+	RETURN
+	;mi
+	MOVFW note
+	XORLW d'17'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'20'
+	MOVWF j
+	MOVLW d'14'
+	MOVWF k
+	RETURN
+	;sol
+	MOVFW note
+	XORLW d'18'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'16'
+	MOVWF j
+	MOVLW d'18'
+	MOVWF k
+	RETURN
+	;la
+	MOVFW note
+	XORLW d'19'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'15'
+	MOVWF j
+	MOVLW d'5'
+	MOVWF k
+	RETURN
+	;fa#
+	MOVFW note
+	XORLW d'20'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'18'
+	MOVWF j
+	MOVLW d'9'
+	MOVWF k
+	RETURN
+	;mi
+	MOVFW note
+	XORLW d'21'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'20'
+	MOVWF j
+	MOVLW d'14'
+	MOVWF k
+	RETURN
+	;sol
+	MOVFW note
+	XORLW d'22'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'16'
+	MOVWF j
+	MOVLW d'18'
+	MOVWF k
+	RETURN
+	;fa#
+	MOVFW note
+	XORLW d'23'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'18'
+	MOVWF j
+	MOVLW d'9'
+	MOVWF k
+	RETURN
+	;mi
+	MOVFW note
+	XORLW d'24'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'20'
+	MOVWF j
+	MOVLW d'14'
+	MOVWF k
+	RETURN
+	;fa#
+	MOVFW note
+	XORLW d'25'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'18'
+	MOVWF j
+	MOVLW d'9'
+	MOVWF k
+	RETURN
+	;re
+	MOVFW note
+	XORLW d'26'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'23'
+	MOVWF j
+	MOVLW d'12'
+	MOVWF k
+	RETURN
+	;mi
+	MOVFW note
+	XORLW d'27'
+	BTFSS STATUS,Z 
+	GOTO $+8
+	MOVLW d'11'
+	MOVWF i
+	MOVLW d'20'
+	MOVWF j
+	MOVLW d'14'
+	MOVWF k
+	RETURN
+	
+    END
